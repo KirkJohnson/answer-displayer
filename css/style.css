@@ -24,6 +24,7 @@ and open the template in the editor.
     border: solid 1px #efefef;
     padding: 5px;
     border-radius: 10px;
+    position: relative;
 }
 #categories_holder:before{
     font-family: "Font Awesome 5 Free";
@@ -32,10 +33,11 @@ and open the template in the editor.
     left: -1.4em;
     color: #EFEFEF;
 }
-#respondents_holder {
+#respondents_holder:before {
     font-family: "Font Awesome 5 Free";
     content: '\f0c0';
     position: absolute;
-    left: -1.4em;
+    left: -1.6em;
     color: #EFEFEF;
+    font-weight: 600;
 }

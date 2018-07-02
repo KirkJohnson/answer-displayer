@@ -181,48 +181,8 @@ jQuery(document).ready(function($){
             if( made == true ) {
                 $('#category_title').val('');
                 //add to category select
-                add_category( cat )
-            }
-        }
-    });
-    
-    //add respondent
-    $(document).on('click', '#add_respondent', function(event){
-        event.preventDefault();
-        
-        //validate
-        var name = $('#respondent_name').val().trim();
-        var cat = $('#category').val();
-        var errors = [];
-        if( name == '' ){
-            errors.push('Can not add a blank name');
-        }
-        $('#respondent option').each(function(){
-            var op_name = $( this ).val().trim().toLowerCase();
-            var f_name = $( this ).toLowerCase();
-            if( f_name === op_name && op_name !== '' ){
-                errors.push("There is already a respondent with this name");
-            } 
-        });
-        
-        if( errors.length > 0 ){
-            $.each(errors, function(index, value){
-               make_alert('danger',value); 
-            });
-        } else {
-            //add respondent
-            var data = {
-                id: $('#question_set_id').val(),
-                name: name,
-                category: cat,
-                nonce: answer_object.nonce,
-                action: 'add_question_respondent'
-            }
-            
-            var made = make_post_call_get_new_questions(data, true);
-            
-            if( made == true ){
-                $('#respondent_name').val('');
+                add_category( cat );
+                sortSelect(document.getElementById('category'));
             }
         }
     });
@@ -254,7 +214,84 @@ jQuery(document).ready(function($){
                 $( this ).parent('li').remove();
             }
         }
+    });
+    
+    //add respondent
+    $(document).on('click', '#add_respondent', function(event){
+        event.preventDefault();
+        
+        //validate
+        var name = $('#respondent_name').val().trim();
+        var cat = $('#category').val();
+        var errors = [];
+        if( name == '' ){
+            errors.push('Can not add a blank name');
+        }
+        $('#respondent option').each(function(){
+            var op_name = $( this ).text().trim().toLowerCase();
+            var f_name = name.toLowerCase();
+            if( f_name === op_name && op_name !== '' ){
+                errors.push("There is already a respondent with this name");
+            } 
+        });
+        
+        if( errors.length > 0 ){
+            $.each(errors, function(index, value){
+               make_alert('danger',value); 
+            });
+        } else {
+            var q_id = $('#question_set_id').val();
+            //add respondent
+            var data = {
+                id: q_id,
+                name: name,
+                category: cat,
+                nonce: answer_object.nonce,
+                action: 'add_question_respondent'
+            }
+            
+            var made = make_post_call_get_new_questions(data, true);
+            
+            if( made == true ){
+                $('#respondent_name').val('');
+                add_respondent(q_id, name);
+                sortSelect(document.getElementById('respondent'));
+            } else {
+                make_alert('danger', 'Error occurred and respondent was not added');
+            }
+        }
+    });
+    
+    //delete respondent
+    $(document).on('click',  '.delete_respondent', function(event) {
+        event.preventDefault();
+        var cnf = confirm('Are you sure you want to remove this respondent and all their data?');
+        
+        if( cnf == true ){
+            //init values
+            var name = $( this ).data('name');
+            var r_id = $( this ).data('id');
+            var q_id = $('#question_set_id').val();
+            //create data object
+            var data = {
+                id: q_id,
+                index: r_id,
+                name: name,
+                nonce: answer_object.nonce,
+                action: 'delete_question_respondent'
+            }
+            //send data object
+            var make = make_post_call_get_new_questions(data, true);
+            //if success remove from ul and select
+            if( make == true ){
+                $( this ).parent('li').remove();
+                $('#respondent option[data-id="'+r_id+'"]').remove();
+            } else {
+                make_alert('danger', 'An error occurred and respondent was not deleted');
+            }
+        }
     })
+    
     //remove red borders if area gets filled for validation
     $(document).on( 'keypress', '#question_builder form .border.border-danger', function(){
         if( $( this ).val() !== '' ){
@@ -278,7 +315,7 @@ jQuery(document).ready(function($){
         //find respondent index by name
         var r_id = -1;
         $.each(question_sets[id].responders, function( index, value){
-            if ( value == name ){
+            if ( value.name == name ){
                 r_id = index;
             }
         });
@@ -287,7 +324,7 @@ jQuery(document).ready(function($){
             //add
             $('#respondent').append('<option value="'+r_id+'">'+name+'</option>');
             var cat_id = $('#respondent_holder li').length;
-            $('#respondent_holder').append(
+            $('#respondents_holder').append(
                     '<li>'+
                         name+
                         '<span class="delete_respondent" data-name="'+name+'" data-id="'+r_id+'" title="Delete Respondent"><i class="fas fa-minus-circle"></i></span>'+
@@ -337,7 +374,7 @@ jQuery(document).ready(function($){
         $('#respondent').find('option').remove();
         $('#respondent').append('<option value=""></value>');
         $.each(question_sets[id].responders, function(index, value){
-            add_respondent(id, value );
+            add_respondent(id, value.name );
         });
         
         //build out questions
@@ -486,6 +523,24 @@ jQuery(document).ready(function($){
                     '</button>'+
                     '</div>';
         $('#alerts').append(alert);
+    }
+    
+    function sortSelect(selElem) {
+        var tmpAry = new Array();
+        for (var i=0;i<selElem.options.length;i++) {
+            tmpAry[i] = new Array();
+            tmpAry[i][0] = selElem.options[i].text;
+            tmpAry[i][1] = selElem.options[i].value;
+        }
+        tmpAry.sort();
+        while (selElem.options.length > 0) {
+            selElem.options[0] = null;
+        }
+        for (var i=0;i<tmpAry.length;i++) {
+            var op = new Option(tmpAry[i][0], tmpAry[i][1]);
+            selElem.options[i] = op;
+        }
+        return;
     }
 });
 

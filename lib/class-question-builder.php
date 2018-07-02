@@ -39,6 +39,8 @@ if ( ! class_exists('Question_Builder') ) {
                             add_action('wp_ajax_delete_question_set', array($this, 'delete_question_set'));
                             add_action('wp_ajax_add_respondent_category', array($this, 'add_respondent_category'));
                             add_action('wp_ajax_delete_question_category', array($this, 'delete_question_category'));
+                            add_action('wp_ajax_add_question_respondent', array($this, 'add_question_respondent'));
+                            add_action('wp_ajax_delete_question_respondent', array($this, 'delete_question_respondent'));
                         }
                  }
                  /*
@@ -80,14 +82,72 @@ if ( ! class_exists('Question_Builder') ) {
                                         array( $this, 'question_builder') , 'dashicons-tickets', 6 );
                         }
                  }
-                 public function delete_question_category() {
-                        //verify nonce
+                 /*
+                  * delete a respondent from a question set
+                  */
+                 public function delete_question_respondent() {
+                        $object = $this->verify_nonce_get_object();
+                        //init values
+                        $id = $_REQUEST['id'];
+                        $index = $_REQUEST['index'];
+                        $name = $_REQUEST['name'];
+                        //if set exists remove respondent
+                        if(isset($object[$id])){
+                            //check if index cooresponds to respondent else find correct index
+                            if( isset($object[$id]['responders'][$index]) && 
+                                    $object[$id]['responders'][$index]['name'] != $name ){
+                                foreach( $object[$id]['responders'] as $ind => $res ){
+                                        if( $name == $res['name'] ) {
+                                            $index = $ind;
+                                            break;
+                                        }
+                                } 
+                            }
+                            //if all is correct unset and send
+                            if( isset ($object[$id]['responders'][$index]) && 
+                                    $object[$id]['responders'][$index]['name'] == $name){
+                                    unset($object[$id]['responders'][$index]); //remove from set
+                                    update_site_option(Question_Builder::$question_set_key, $object); //update
+                                    $this->send_ajax_object($object); //send successful response
+                            }
+                        }
+                        //if we got here send error
+                        wp_send_json_error();
+                        
+                 }
+                 /*
+                  * add a respondent to a qeustion set
+                  */
+                 public function add_question_respondent() {
+                        $object = $this->verify_nonce_get_object();
+                        //init vars
+                        $id = $_REQUEST['id'];
+                        $name = sanitize_text_field($_REQUEST['name']);
+                        $cat = sanitize_text_field($_REQUEST['category']);
+                        
+                        if(isset($object[$id])){
+                            //add respondent
+                            $object[$id]['responders'][] = array( 'name' => $name, 'category' => $cat );
+                            update_site_option(Question_Builder::$question_set_key, $object);
+                            $this->send_ajax_object($object); //successful call return
+                        }
+                        //if we got here send error
+                        wp_send_json_error();
+                 }
+                 /*
+                  * reformatted resuable part of code
+                  */
+                 private function verify_nonce_get_object() {
+                         //verify nonce
                         if (!wp_verify_nonce($_REQUEST['nonce'], 'answer_nonce')) {
                             die(__('Busted.')); // Nonce check
                         }
                         //get object
                         $object = get_site_option(Question_Builder::$question_set_key);
-                        
+                        return $object;
+                 }
+                 public function delete_question_category() {
+                       $object = $this->verify_nonce_get_object();
                         //get cat index
                         $cat_index = $_REQUEST["cat_id"];
                         $cat = $_REQUEST['cat'];
@@ -109,15 +169,10 @@ if ( ! class_exists('Question_Builder') ) {
                             update_site_option(Question_Builder::$question_set_key, $object);
                             $this->send_ajax_object($object);
                         }
+                        wp_send_json_error();
                  }
                  public function delete_question_set(){
-                         //verify nonce
-                        if (!wp_verify_nonce($_REQUEST['nonce'], 'answer_nonce')) {
-                            die(__('Busted.')); // Nonce check
-                        }
-                        
-                        //get object
-                        $object = get_site_option(Question_Builder::$question_set_key);
+                         $object = $this->verify_nonce_get_object();
                         //unset questions set
                         unset($object[$_REQUEST['id']]);
                         //update object
@@ -127,12 +182,7 @@ if ( ! class_exists('Question_Builder') ) {
                  }
                  
                  public function add_respondent_category() {
-                        //verify nonce
-                        if (!wp_verify_nonce($_REQUEST['nonce'], 'answer_nonce')) {
-                            die(__('Busted.')); // Nonce check
-                        }
-                        //get the question object
-                        $object = get_site_option(Question_Builder::$question_set_key);
+                        $object = $this->verify_nonce_get_object();
                         
                         $object[$_REQUEST['id']]['categories'][] = sanitize_text_field($_REQUEST['category']);
                         
@@ -147,12 +197,7 @@ if ( ! class_exists('Question_Builder') ) {
                   * @return json with a json object of the various quetion sets
                   */
                  public function create_question_set() {
-                        //verify nonce
-                        if (!wp_verify_nonce($_REQUEST['nonce'], 'answer_nonce')) {
-                            die(__('Busted.')); // Nonce check
-                        }
-                        //get the question object
-                        $object = get_site_option(Question_Builder::$question_set_key);
+                        $object = $this->verify_nonce_get_object();
                         //if nothing is set create an array
                         if ( ! $object ) {
                             $object = array();
