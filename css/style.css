@@ -7,4 +7,35 @@ and open the template in the editor.
     Created on : Jun 25, 2018, 8:45:03 AM
     Author     : Kirk Johnson
 */
-
+.edit_set{
+    color: #28a745;
+    cursor: pointer;
+}
+.delete_set,.delete_category, .delete_respondent{
+    color: red;
+    cursor: pointer;
+    margin-left: 5%;
+}
+.add_user, .change_category {
+    margin-left: 5%;
+    color: #007bff;
+}
+#categories_holder, #respondents_holder {
+    border: solid 1px #efefef;
+    padding: 5px;
+    border-radius: 10px;
+}
+#categories_holder:before{
+    font-family: "Font Awesome 5 Free";
+    content: '\f07c';
+    position: absolute;
+    left: -1.4em;
+    color: #EFEFEF;
+}
+#respondents_holder {
+    font-family: "Font Awesome 5 Free";
+    content: '\f0c0';
+    position: absolute;
+    left: -1.4em;
+    color: #EFEFEF;
+}

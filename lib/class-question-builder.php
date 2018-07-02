@@ -3,8 +3,25 @@
 if ( ! class_exists('Question_Builder') ) {
   
         class Question_Builder {
-                
-          
+                public static $question_set_key = 'answer_builder_quetion_object';
+                /*
+                 *  question_set_object looks like:
+                 * 
+                 * [
+                 *      0 => [ 'questions' => [] ,
+                 *            'responders' => [   'name',
+                 *                                  'category',
+                 *                                  'answers' => [ //answers in same order as questions]
+                 *                              ]
+                 *             'categories' ] => [ 
+                 *                                      0 => 'name'
+                 *                                 ],
+                 *              'title' => title
+                 *         ]
+                 *                                  
+                 * ]
+                 * 
+                 */
                 public function __construct() {
                   
                 }
@@ -15,6 +32,14 @@ if ( ! class_exists('Question_Builder') ) {
                         add_action( 'admin_menu', array( $this, 'create_admin_page' ) );
                         //script and style enqueues
                         add_action( 'admin_enqueue_scripts', array($this, 'admin_script_and_styles' ) );
+                        
+                        //ajax
+                        if (wp_doing_ajax()) {
+                            add_action('wp_ajax_create_question_set', array($this, 'create_question_set'));
+                            add_action('wp_ajax_delete_question_set', array($this, 'delete_question_set'));
+                            add_action('wp_ajax_add_respondent_category', array($this, 'add_respondent_category'));
+                            add_action('wp_ajax_delete_question_category', array($this, 'delete_question_category'));
+                        }
                  }
                  /*
                   * admin script and styles
@@ -33,6 +58,15 @@ if ( ! class_exists('Question_Builder') ) {
                                 wp_enqueue_style( 'answer_displayer/style' );
                                 wp_enqueue_script( 'answer_displayer/bootstrap_js' );
                                 wp_enqueue_script( 'answer_displayer/question_builder' );
+                                
+                                //localize script for AJAX calls
+                                $question_object = get_site_option(Question_Builder::$question_set_key);
+                                $question_object = ($question_object == false ) ? [] : $question_object;
+                                wp_localize_script( 'answer_displayer/question_builder', 'answer_object', array(
+                                        'ajax_url' => admin_url('admin-ajax.php'),
+                                        'nonce' => wp_create_nonce('answer_nonce'),
+                                        'question_object' => $question_object
+                                ));
                         }
                  }
                  /*
@@ -46,6 +80,123 @@ if ( ! class_exists('Question_Builder') ) {
                                         array( $this, 'question_builder') , 'dashicons-tickets', 6 );
                         }
                  }
+                 public function delete_question_category() {
+                        //verify nonce
+                        if (!wp_verify_nonce($_REQUEST['nonce'], 'answer_nonce')) {
+                            die(__('Busted.')); // Nonce check
+                        }
+                        //get object
+                        $object = get_site_option(Question_Builder::$question_set_key);
+                        
+                        //get cat index
+                        $cat_index = $_REQUEST["cat_id"];
+                        $cat = $_REQUEST['cat'];
+                        $id = $_REQUEST['id'];
+                        //verify cat is correct else get index by value
+                        if( $object[$id]['categories'][$cat_index] != $cat ) {
+                            $cat_index = array_search($cat, $object[$id]['categories'][$cat_index]);
+                        }
+                        
+                        if(isset($object[$id]['categories'][$cat_index])){
+                            unset($object[$id]['categories'][$cat_index]);
+                            //unset all respondents category
+                            foreach($object[$id]['responders'] as $index => $res ){
+                                if( $res['category'] == $cat ){
+                                    $object[$id]['responders'][$index]['category'] = '';
+                                }
+                            }
+                            
+                            update_site_option(Question_Builder::$question_set_key, $object);
+                            $this->send_ajax_object($object);
+                        }
+                 }
+                 public function delete_question_set(){
+                         //verify nonce
+                        if (!wp_verify_nonce($_REQUEST['nonce'], 'answer_nonce')) {
+                            die(__('Busted.')); // Nonce check
+                        }
+                        
+                        //get object
+                        $object = get_site_option(Question_Builder::$question_set_key);
+                        //unset questions set
+                        unset($object[$_REQUEST['id']]);
+                        //update object
+                        update_site_option($object, Question_Builder::$question_set_key);
+                        //return new object
+                        $this->send_ajax_object($object);
+                 }
+                 
+                 public function add_respondent_category() {
+                        //verify nonce
+                        if (!wp_verify_nonce($_REQUEST['nonce'], 'answer_nonce')) {
+                            die(__('Busted.')); // Nonce check
+                        }
+                        //get the question object
+                        $object = get_site_option(Question_Builder::$question_set_key);
+                        
+                        $object[$_REQUEST['id']]['categories'][] = sanitize_text_field($_REQUEST['category']);
+                        
+                        update_site_option(Question_Builder::$question_set_key, $object);
+                        
+                        $this->send_ajax_object($object);
+                 
+                 }
+                 /*
+                  * AJAX call creates a questions set or adds a new one
+                  * 
+                  * @return json with a json object of the various quetion sets
+                  */
+                 public function create_question_set() {
+                        //verify nonce
+                        if (!wp_verify_nonce($_REQUEST['nonce'], 'answer_nonce')) {
+                            die(__('Busted.')); // Nonce check
+                        }
+                        //get the question object
+                        $object = get_site_option(Question_Builder::$question_set_key);
+                        //if nothing is set create an array
+                        if ( ! $object ) {
+                            $object = array();
+                        }
+                        
+                        //sanitize input
+                        $id = $_REQUEST['id'];
+                        $title = sanitize_text_field($_REQUEST['title']);
+                        $questions = array();
+                        foreach( $_REQUEST['questions']  as $q ){
+                            $questions[] = sanitize_textarea_field($q);
+                        }
+                        
+                        //add questions to array and blank arrays for the rest of items
+                        if( $id == 'new' || !isset($object[$id]) ) {
+                            //create a string id so if qeustions get deleted indexes don't renumber
+                            // and shortcodes won't be lost
+                            if(count($object) == 0  ) {
+                                $id = 'set_0';
+                            } else {
+                                end($object);
+                                $id = "set_". (intval(str_replace("set_","",key($object))) + 1)."";
+                            }
+                            
+                            $object[$id] = array(
+                                'questions' => $questions,
+                                'responders' => array(),
+                                'categories' => array(),
+                                'title' => $title
+                                );
+                        } else {
+                            $object[$id]['questions'] = $questions;
+                            $object[$id]['title'] = $title;
+                        }
+                        //update site option
+                        update_site_option(Question_Builder::$question_set_key, $object);
+                        
+                        //send object
+                        $this->send_ajax_object($object);
+                 }
+                 private function send_ajax_object($object) {
+                        //send object back
+                        wp_send_json( array("result"=>"success", "object" => $object));
+                 }
                  /*
                   * create the admin question builder page
                   */
@@ -56,11 +207,12 @@ if ( ! class_exists('Question_Builder') ) {
         <div id="alerts"></div>
             <div id="questions">
                 <div class="row">
-                    <table class='table'>
+                    <table id="quesiton_sets_table" class='table'>
                             <thead>
                                 <th scope="col">Question Set Id</th>
                                 <th scope="col">Number of Questions</th> 
                                 <th scope="col">Number of Responders</th> 
+                                <th scope="col">Actions</th>
                             </thead>
                             <tbody>
                                 
@@ -73,6 +225,9 @@ if ( ! class_exists('Question_Builder') ) {
             </div>
             <div id='question_builder' class='hidden'>
                  
+            </div>
+            <div id="user_builder" class='hidden' >
+          
             </div>
     </div>
 
