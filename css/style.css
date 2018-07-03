@@ -7,9 +7,12 @@ and open the template in the editor.
     Created on : Jun 25, 2018, 8:45:03 AM
     Author     : Kirk Johnson
 */
-.edit_set{
+.edit_set, .edit_respondent{
     color: #28a745;
     cursor: pointer;
+}
+.edit_respondent{
+    margin-left: 5%;
 }
 .delete_set,.delete_category, .delete_respondent{
     color: red;

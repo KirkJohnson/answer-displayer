@@ -41,6 +41,8 @@ if ( ! class_exists('Question_Builder') ) {
                             add_action('wp_ajax_delete_question_category', array($this, 'delete_question_category'));
                             add_action('wp_ajax_add_question_respondent', array($this, 'add_question_respondent'));
                             add_action('wp_ajax_delete_question_respondent', array($this, 'delete_question_respondent'));
+                            add_action('wp_ajax_switch_respondent_category', array($this, 'switch_respondent_category'));
+                            add_action('wp_ajax_edit_respondent_name', array($this, 'edit_respondent_name'));
                         }
                  }
                  /*
@@ -54,7 +56,7 @@ if ( ! class_exists('Question_Builder') ) {
                                 wp_register_style( 'answer_displayer/font_awesome', 'https://use.fontawesome.com/releases/v5.1.0/css/all.css' );
                                 wp_register_style( 'answer_displayer/style', plugin_dir_url('answer-displayer/answer-displayer.php').'css/style.css' );
                                 wp_register_script( 'answer_displayer/bootstrap_js', 'https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js', ['jquery'] );
-                                wp_register_script( 'answer_displayer/question_builder',plugin_dir_url( 'answer-displayer/answer-displayer.php' ) . "js/question_builder.js", ['jquery']  );
+                                wp_register_script( 'answer_displayer/question_builder',plugin_dir_url( 'answer-displayer/answer-displayer.php' ) . "js/question_builder.js", ['jquery','sweetalert2']  );
                                 wp_enqueue_style( 'answer_displayer/bootstrap_css' );
                                 wp_enqueue_style( 'answer_displayer/font_awesome' );
                                 wp_enqueue_style( 'answer_displayer/style' );
@@ -70,6 +72,7 @@ if ( ! class_exists('Question_Builder') ) {
                                         'question_object' => $question_object
                                 ));
                         }
+                        wp_enqueue_script('sweetalert2', plugin_dir_url( 'answer-displayer/answer-displayer.php' ) . '/js/sweetalert2.all.min.js');
                  }
                  /*
                   * creates admin page for building questions
@@ -81,6 +84,57 @@ if ( ! class_exists('Question_Builder') ) {
                                 add_menu_page('Question Builder', 'Question Builder', 'manage_options','question_builder',
                                         array( $this, 'question_builder') , 'dashicons-tickets', 6 );
                         }
+                 }
+                 /*
+                  * edit respondent name
+                  */
+                 public function edit_respondent_name(){
+                        $object = $this->verify_nonce_get_object();
+                        
+                        $id = $_REQUEST['id'];
+                        $r_id = $_REQUEST['r_id'];
+                        $old_name = $_REQUEST['name'];
+                        $new_name = $_REQUEST['new_name'];
+                        
+                        if( isset($object[$id]) && isset($object[$id]['responders'][$r_id])) {
+                            if($old_name != $object[$id]['responders'][$r_id]['name'] ){
+                                //find correct id based on name
+                                foreach($object[$id]['responders'] as $index => $value ){
+                                    if( $value['name'] == $old_name ){
+                                        $r_id = $index;
+                                        break;
+                                    }
+                                }
+                            }
+                            //change
+                            $object[$id]['responders'][$r_id]['name'] = $new_name;
+                            //update
+                            update_site_option(Question_Builder::$question_set_key, $object);
+                            //send
+                            $this->send_ajax_object($object);
+                            
+                        }
+                        wp_send_json_error();
+                 }
+                 /*
+                  * switch respondent category
+                  */
+                 public function switch_respondent_category() {
+                        $object = $this->verify_nonce_get_object();
+                        
+                        $id = $_REQUEST['id'];
+                        $r_id = $_REQUEST['r_id'];
+                        $category = $_REQUEST['cat'];
+                        
+                        if( isset( $object[$id]) && isset( $object[$id]['responders'][$r_id] ) )  {
+                                //change category
+                                $object[$id]['responders'][$r_id]['category'] = $category;
+                                //update object
+                                update_site_option(Question_Builder::$question_set_key, $object);
+                                //send success
+                                $this->send_ajax_object($object);
+                        } 
+                        wp_send_json_error();
                  }
                  /*
                   * delete a respondent from a question set

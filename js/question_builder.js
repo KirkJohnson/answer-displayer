@@ -290,7 +290,25 @@ jQuery(document).ready(function($){
                 make_alert('danger', 'An error occurred and respondent was not deleted');
             }
         }
-    })
+    });
+    
+    //switch categories on respondent
+    $(document).on('click', '.change_category', function (event) {
+        event.preventDefault();
+        var q_id = $('#question_set_id').val();
+        var r_id = $( this ).data('id');
+        
+        switch_category(q_id, r_id);
+    });
+    //edit respondent name
+    $(document).on('click','.edit_respondent', function(event){
+        event.preventDefault();
+        var q_id = $('#question_set_id').val();
+        var r_id = $( this ).data('id');
+        var name = $( this ).data('name');
+        
+        edit_respondent_name(q_id, r_id, name );
+    });
     
     //remove red borders if area gets filled for validation
     $(document).on( 'keypress', '#question_builder form .border.border-danger', function(){
@@ -327,8 +345,9 @@ jQuery(document).ready(function($){
             $('#respondents_holder').append(
                     '<li>'+
                         name+
-                        '<span class="delete_respondent" data-name="'+name+'" data-id="'+r_id+'" title="Delete Respondent"><i class="fas fa-minus-circle"></i></span>'+
-                        '<span class="change_category" data-name="'+name+'" data-id="'+r_id+'" title="ChangeRespondent"><i class="fas fa-exchange-alt"></i></span>'+
+                        '<span class="delete_respondent" title="Delete Respondent" data-name="'+name+'" data-id="'+r_id+'" title="Delete Respondent"><i class="fas fa-minus-circle"></i></span>'+
+                        '<span class="change_category" title="Change Category" data-name="'+name+'" data-id="'+r_id+'" title="ChangeRespondent"><i class="fas fa-exchange-alt"></i></span>'+
+                        '<span class="edit_respondent" title="Change Category" data-name="'+name+'" data-id="'+r_id+'" title="ChangeRespondent"><i class="fas fa-pencil-alt"></i></span>'+
                     '</li>'
                     );
         }
@@ -524,7 +543,80 @@ jQuery(document).ready(function($){
                     '</div>';
         $('#alerts').append(alert);
     }
-    
+    async function edit_respondent_name(q_id, r_id, name ){
+        const {value: new_name} = await swal({
+        title: 'What is the new name?',
+        input: 'text',
+        inputPlaceholder: name,
+        showCancelButton: true,
+        inputValidator: (value) => {
+          return !value && 'You need to write something!'
+        }
+      })
+
+      if (new_name && new_name != '') {
+            //put together data and send to update
+            var data = {
+                id: q_id,
+                r_id: r_id,
+                name: name,
+                new_name: new_name,
+                nonce: answer_object.nonce,
+                action: 'edit_respondent_name'
+            };
+            
+            var make = make_post_call_get_new_questions(data, true);
+            
+            if( make !== true ){
+                make_alert('danger', 'Error occurred and name was not changed');
+            } else {
+                //remove old li an make new one
+                $('#respondents_holder').html('');
+                $('#respondent option').each( function () {
+                    if( $( this ).val() !== '' ){
+                        $( this ).remove();
+                    }
+                });
+                $.each(question_sets[q_id].responders, function(index, value){
+                    add_respondent(q_id, value.name);
+                });
+                sortSelect(document.getElementById('respondent'));
+            }
+      }
+    }
+    async function switch_category (q_id, r_id) {
+        var options = {};
+        $('#category option').each(function(index, value) {
+            options[$(this).val()] = $(this).text();
+        })
+        const {value: category} = await swal({
+          title: 'Select Category',
+          input: 'select',
+          inputOptions: options,
+          inputPlaceholder: 'Select cateegory',
+          showCancelButton: true,
+          inputValidator: (value) => {
+            return new Promise((resolve) => {
+              
+                resolve()
+            })
+          }
+        });
+
+        //put together data
+        var data = {
+            id: q_id,
+            r_id: r_id,
+            cat: category,
+            nonce: answer_object.nonce,
+            action: 'switch_respondent_category' 
+        }
+        var make = make_post_call_get_new_questions(data, true);
+        
+        if( make !== true ) {
+            make_alert('danger', 'Switching categories failed' );
+        }
+    }
     function sortSelect(selElem) {
         var tmpAry = new Array();
         for (var i=0;i<selElem.options.length;i++) {
