@@ -50,10 +50,9 @@ jQuery(document).ready(function($){
                         '<div class="form-check mb-2">'+
                             '<a id="save_answers" class="btn btn-outline-secondary">Save Answers</a>'+
                         '</div>'+
-                        '<div class="form-check mb-2">'+
-                            '<a id="close_answer_screen" class="btn btn-primary">View Question Set Table</a>'+
-                        '</div>'+
-                    '</form></div>';
+                    '</form>'+
+                    '<a id="close_answer_screen" class="btn btn-primary">View Question Set Table</a>'+
+                    '</div>';
     //init with questions
     var question_sets = answer_object.question_object;
     build_question_table(question_sets);
@@ -284,8 +283,7 @@ jQuery(document).ready(function($){
             var make = make_post_call_get_new_questions(data, true);
             //if success remove from ul and select
             if( make == true ){
-                $( this ).parent('li').remove();
-                $('#respondent option[data-id="'+r_id+'"]').remove();
+               remove_and_create_respondents(q_id);
             } else {
                 make_alert('danger', 'An error occurred and respondent was not deleted');
             }
@@ -309,7 +307,54 @@ jQuery(document).ready(function($){
         
         edit_respondent_name(q_id, r_id, name );
     });
-    
+    //switch to respondents answers
+    $(document).on('change', '#respondent', function(event){
+        var q_id = $('#question_set_id').val();
+        var r_id = $( this ).val();
+        
+        var count = 0;
+        
+        //fill all textareas with blank
+        $('#question_entries textarea').each(function(){
+            if( r_id == '' || typeof question_sets[q_id].responders[r_id].answers[count] == 'undefined' ){
+                $( this ).val('');
+            } else {
+                $( this ).val(question_sets[q_id].responders[r_id].answers[count]);
+            }
+            count++;
+        });
+        
+    });
+    //save answer to respondent
+    $(document).on('click','#save_answers', function(event){
+        //validate
+        var q_id = $('#question_set_id').val();
+        var r_id = $('#respondent').val(); 
+        
+        if( r_id == '' ){
+            make_alert('danger', "You must select a user before entering answers");
+        } else {
+            var answers = [];
+            $('#question_entries textarea').each(function(){
+                answers.push($( this ).val());
+            });
+            var data ={
+                id: q_id,
+                r_id: r_id,
+                answers: answers,
+                nonce: answer_object.nonce,
+                action: 'edit_respondent_answers'
+            }
+            //send data object
+            var make = make_post_call_get_new_questions(data, true);
+            
+            if( make !== true ){
+                make_alert('danger', 'Failed to save questions');
+            } else {
+                make_alert('success', 'Questions saved successfully');
+            }
+        }
+    });
     //remove red borders if area gets filled for validation
     $(document).on( 'keypress', '#question_builder form .border.border-danger', function(){
         if( $( this ).val() !== '' ){
@@ -571,18 +616,21 @@ jQuery(document).ready(function($){
                 make_alert('danger', 'Error occurred and name was not changed');
             } else {
                 //remove old li an make new one
-                $('#respondents_holder').html('');
-                $('#respondent option').each( function () {
-                    if( $( this ).val() !== '' ){
-                        $( this ).remove();
-                    }
-                });
-                $.each(question_sets[q_id].responders, function(index, value){
-                    add_respondent(q_id, value.name);
-                });
-                sortSelect(document.getElementById('respondent'));
+                remove_and_create_respondents(q_id);
             }
       }
+    }
+    function remove_and_create_respondents(q_id){
+        $('#respondents_holder').html('');
+        $('#respondent option').each( function () {
+            if( $( this ).val() !== '' ){
+                $( this ).remove();
+            }
+        });
+        $.each(question_sets[q_id].responders, function(index, value){
+            add_respondent(q_id, value.name);
+        });
+        sortSelect(document.getElementById('respondent'));
     }
     async function switch_category (q_id, r_id) {
         var options = {};

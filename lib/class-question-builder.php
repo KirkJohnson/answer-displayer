@@ -43,6 +43,7 @@ if ( ! class_exists('Question_Builder') ) {
                             add_action('wp_ajax_delete_question_respondent', array($this, 'delete_question_respondent'));
                             add_action('wp_ajax_switch_respondent_category', array($this, 'switch_respondent_category'));
                             add_action('wp_ajax_edit_respondent_name', array($this, 'edit_respondent_name'));
+                            add_action('wp_ajax_edit_respondent_answers', array($this, 'edit_respondent_answers'));
                         }
                  }
                  /*
@@ -84,6 +85,29 @@ if ( ! class_exists('Question_Builder') ) {
                                 add_menu_page('Question Builder', 'Question Builder', 'manage_options','question_builder',
                                         array( $this, 'question_builder') , 'dashicons-tickets', 6 );
                         }
+                 }
+                 /*
+                  * edit answers
+                  */
+                 public function edit_respondent_answers(){
+                        $object = $this->verify_nonce_get_object();
+                        
+                        //init
+                        $id = $_REQUEST['id'];
+                        $r_id = $_REQUEST['r_id'];
+                        $answers = $_REQUEST['answers'];
+                        //sanitize answers
+                        foreach($answers as $index => $value){
+                            $answers[$index] = sanitize_textarea_field($value);
+                        }
+                        
+                        if(isset($object[$id]) && isset($object[$id]['responders'][$r_id])){
+                          $object[$id]['responders'][$r_id]['answers'] = $answers;
+                          
+                          update_site_option(Question_Builder::$question_set_key, $object);
+                          $this->send_ajax_object($object);
+                        }
+                        wp_send_json_error();
                  }
                  /*
                   * edit respondent name
@@ -181,7 +205,7 @@ if ( ! class_exists('Question_Builder') ) {
                         
                         if(isset($object[$id])){
                             //add respondent
-                            $object[$id]['responders'][] = array( 'name' => $name, 'category' => $cat );
+                            $object[$id]['responders'][] = array( 'name' => $name, 'category' => $cat, 'answers' =>array() );
                             update_site_option(Question_Builder::$question_set_key, $object);
                             $this->send_ajax_object($object); //successful call return
                         }
@@ -310,7 +334,7 @@ if ( ! class_exists('Question_Builder') ) {
                             <thead>
                                 <th scope="col">Question Set Id</th>
                                 <th scope="col">Number of Questions</th> 
-                                <th scope="col">Number of Responders</th> 
+                                <th scope="col">Shortcode</th> 
                                 <th scope="col">Actions</th>
                             </thead>
                             <tbody>
