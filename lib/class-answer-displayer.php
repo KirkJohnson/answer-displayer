@@ -107,7 +107,7 @@ if ( ! class_exists('Answer_Displayer') ) {
                 <div class="user_name">
                     <?php echo $resp['name'];?>
                 </div>
-            <p><?php echo $answer; $bcolors++;?> </p>
+            <?php echo $answer; $bcolors++;?> 
         </div>
               <?php } ?>
          <?php } ?>

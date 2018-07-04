@@ -97,10 +97,7 @@ if ( ! class_exists('Question_Builder') ) {
                         $id = $_REQUEST['id'];
                         $r_id = $_REQUEST['r_id'];
                         $answers = $_REQUEST['answers'];
-                        //sanitize answers
-                        foreach($answers as $index => $value){
-                            $answers[$index] = sanitize_textarea_field($value);
-                        }
+                        
                         
                         if(isset($object[$id]) && isset($object[$id]['responders'][$r_id])){
                           $object[$id]['responders'][$r_id]['answers'] = $answers;
@@ -228,27 +225,25 @@ if ( ! class_exists('Question_Builder') ) {
                  public function delete_question_category() {
                        $object = $this->verify_nonce_get_object();
                         //get cat index
-                        $cat_index = $_REQUEST["cat_id"];
                         $cat = $_REQUEST['cat'];
                         $id = $_REQUEST['id'];
-                        //verify cat is correct else get index by value
-                        if( $object[$id]['categories'][$cat_index] != $cat ) {
-                            $cat_index = array_search($cat, $object[$id]['categories'][$cat_index]);
+                        foreach($object[$id]['categories'] as $index => $category ) {
+                            if( $category  == $cat ){
+                                unset($object[$id]['categories'][$index]);
+                                break;
+                            }
+                        }
+                        foreach( $object[$id]['responders'] as $index => $resp){
+                            if( $resp['category'] == $cat ){
+                                $object[$id]['responders'][$index]['category'] = '';
+                            }
                         }
                         
-                        if(isset($object[$id]['categories'][$cat_index])){
-                            unset($object[$id]['categories'][$cat_index]);
-                            //unset all respondents category
-                            foreach($object[$id]['responders'] as $index => $res ){
-                                if( $res['category'] == $cat ){
-                                    $object[$id]['responders'][$index]['category'] = '';
-                                }
-                            }
                             
-                            update_site_option(Question_Builder::$question_set_key, $object);
-                            $this->send_ajax_object($object);
-                        }
-                        wp_send_json_error();
+                        update_site_option(Question_Builder::$question_set_key, $object);
+                            
+                        
+                        $this->send_ajax_object($object);
                  }
                  public function delete_question_set(){
                          $object = $this->verify_nonce_get_object();
