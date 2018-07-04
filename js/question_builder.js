@@ -450,7 +450,7 @@ jQuery(document).ready(function($){
         $.each(question_sets[id].questions, function(index, value){
             $('#question_entries').append(
                     '<div class="form-group">'+
-                        '<label>'+value+'</label>'+
+                        '<label>'+(id_counter+1)+'. '+value+'</label>'+
                         '<textarea id="'+id_counter+'" class="form-control" data-question="'+index+'"></textarea>'+
                     '</div>'
                     );
