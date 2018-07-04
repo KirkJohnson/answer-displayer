@@ -12,6 +12,7 @@ Version: 0.0.1
 
 $plugin_includes = [
   '/lib/class-question-builder.php',    // Scripts and stylesheets
+  '/lib/class-answer-displayer.php',    //for displaying questions sets on the front page
   
 ];
 

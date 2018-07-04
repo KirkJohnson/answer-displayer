@@ -566,7 +566,7 @@ jQuery(document).ready(function($){
                 html += '<tr>' +
                             '<td>'+id+'</td>'+
                             '<td>'+question_object[id].title+'</td>'+
-                            '<td> answer_display_'+id+'</td>'+
+                            '<td> [answer_display id="'+id+'"]</td>'+
                             '<td>'+
                                 '<span class="edit_set" data-id="'+id+'" title="Edit Set"><i class="fas fa-pencil-alt"></i></span>'+
                                 '<span class="delete_set" data-id="'+id+'" title="Delete Set"><i class="fas fa-minus-circle"></i></span>'+
