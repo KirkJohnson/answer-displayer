@@ -57,6 +57,7 @@ if ( ! class_exists('Question_Builder') ) {
                                 wp_register_style( 'answer_displayer/font_awesome', 'https://use.fontawesome.com/releases/v5.1.0/css/all.css' );
                                 wp_register_style( 'answer_displayer/style', plugin_dir_url('answer-displayer/answer-displayer.php').'css/style.css' );
                                 wp_register_script( 'answer_displayer/bootstrap_js', 'https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js', ['jquery'] );
+                                wp_enqueue_editor();
                                 wp_register_script( 'answer_displayer/question_builder',plugin_dir_url( 'answer-displayer/answer-displayer.php' ) . "js/question_builder.js", ['jquery','sweetalert2']  );
                                 wp_enqueue_style( 'answer_displayer/bootstrap_css' );
                                 wp_enqueue_style( 'answer_displayer/font_awesome' );

@@ -316,10 +316,13 @@ jQuery(document).ready(function($){
         
         //fill all textareas with blank
         $('#question_entries textarea').each(function(){
+            var t_id = $(this).attr('id');
             if( r_id == '' || typeof question_sets[q_id].responders[r_id].answers[count] == 'undefined' ){
                 $( this ).val('');
+                tmce_setContent('',t_id);
             } else {
                 $( this ).val(question_sets[q_id].responders[r_id].answers[count]);
+                tmce_setContent(question_sets[q_id].responders[r_id].answers[count],t_id);
             }
             count++;
         });
@@ -336,7 +339,8 @@ jQuery(document).ready(function($){
         } else {
             var answers = [];
             $('#question_entries textarea').each(function(){
-                answers.push($( this ).val());
+                var t_id = $(this).attr('id');
+                answers.push(tmce_getContent(t_id));
             });
             var data ={
                 id: q_id,
@@ -442,15 +446,21 @@ jQuery(document).ready(function($){
         });
         
         //build out questions
+        var id_counter = 0;
         $.each(question_sets[id].questions, function(index, value){
             $('#question_entries').append(
                     '<div class="form-group">'+
                         '<label>'+value+'</label>'+
-                        '<textarea class="form-control" data-question="'+index+'"></textarea>'+
+                        '<textarea id="'+id_counter+'" class="form-control" data-question="'+index+'"></textarea>'+
                     '</div>'
                     );
+            id_counter++;
         });
         
+        $('#question_entries textarea').each(function(){
+            
+            add_tinymce( $(this).attr('id') );
+        })
         //close question table screen
         //slider question table up
         $('#questions').slideUp();
@@ -682,6 +692,41 @@ jQuery(document).ready(function($){
         }
         return;
     }
+    
+    function add_tinymce(id){
+        wp.editor.initialize(
+            id,
+            { 
+              tinymce: { 
+                wpautop:true, 
+                plugins : 'charmap colorpicker compat3x directionality fullscreen hr image lists media paste tabfocus textcolor wordpress wpautoresize wpdialogs wpeditimage wpemoji wpgallery wplink wptextpattern wpview', 
+                toolbar1: 'formatselect bold italic | bullist numlist | blockquote | alignleft aligncenter alignright | link unlink | wp_more | spellchecker' 
+              }, 
+              quicktags: true 
+            }
+          );
+    }
+    
+    function tmce_getContent(editor_id, textarea_id) {
+        if ( typeof editor_id == 'undefined' ) editor_id = wpActiveEditor;
+        if ( typeof textarea_id == 'undefined' ) textarea_id = editor_id;
+
+        if ( jQuery('#wp-'+editor_id+'-wrap').hasClass('tmce-active') && tinyMCE.get(editor_id) ) {
+          return tinyMCE.get(editor_id).getContent();
+        }else{
+          return jQuery('#'+textarea_id).val();
+        }
+      }
+      function tmce_setContent(content, editor_id, textarea_id) {
+        if ( typeof editor_id == 'undefined' ) editor_id = wpActiveEditor;
+        if ( typeof textarea_id == 'undefined' ) textarea_id = editor_id;
+
+        if ( jQuery('#wp-'+editor_id+'-wrap').hasClass('tmce-active') && tinyMCE.get(editor_id) ) {
+          return tinyMCE.get(editor_id).setContent(content);
+        }else{
+          return jQuery('#'+textarea_id).val(content);
+        }
+      }
 });
 
 
