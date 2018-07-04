@@ -99,7 +99,7 @@ if ( ! class_exists('Answer_Displayer') ) {
                 <p><b><?php echo $question;?></b></p>
             </div>
               <?php foreach($object[$id]['responders'] as $index => $resp ) { 
-                $answer = (isset($resp['answers'][$count])) ? nlbr($resp['answers'][$count]) : "";
+                $answer = (isset($resp['answers'][$count])) ? nlbr(htmlentities($resp['answers'][$count])) : "";
                 $user = sanitize_title($resp['name']);
                 $category = (isset($resp['category'])) ? sanitize_title($resp['category']) : sanitize_title('No Category');
                 ?>
