@@ -96,7 +96,7 @@ if ( ! class_exists('Answer_Displayer') ) {
              
 ?>
             <div class="col-md-12 question">
-                <p><b><?php echo $question;?></b></p>
+                <p><b><?php echo ($count+1).". ". $question;?></b></p>
             </div>
               <?php foreach($object[$id]['responders'] as $index => $resp ) { 
                 $answer = (isset($resp['answers'][$count])) ? $resp['answers'][$count] : "";
