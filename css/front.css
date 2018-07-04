@@ -17,7 +17,7 @@ and open the template in the editor.
 }
 .user_name {
     position: absolute;
-    top: -18%;
+    top: -4%;
     background: white;
     padding: 0;
 }
@@ -34,11 +34,14 @@ and open the template in the editor.
 .answer{
     display:none;
 }
+.form-check label b {
+    font-weight: bold;
+}
 #filters:before {
     content: 'Filters';
     position: absolute;
     background: white;
-    top: -14%;
+    top: -4%;
 }
 .blime{
     border-color: #D3EDAF;
