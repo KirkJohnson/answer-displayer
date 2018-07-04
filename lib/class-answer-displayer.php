@@ -92,11 +92,11 @@ if ( ! class_exists('Answer_Displayer') ) {
             <?php 
             $count = 0;
             
-            foreach($object[$id]['questions'] as $question) { 
+            foreach($object[$id]['questions'] as  $q_number => $question) { 
              
 ?>
             <div class="col-md-12 question">
-                <p><b><?php echo ($count+1).". ". $question;?></b></p>
+                <p><b><?php echo ($q_number+1).". ". $question;?></b></p>
             </div>
               <?php foreach($object[$id]['responders'] as $index => $resp ) { 
                 $answer = (isset($resp['answers'][$count])) ? $resp['answers'][$count] : "";
