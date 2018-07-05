@@ -28,7 +28,7 @@ if ( ! class_exists('Answer_Displayer') ) {
             public function render_answers_displayer( $atts ){
                 $object = get_site_option(Question_Builder::$question_set_key);
                 $id = $atts["id"];
-                $colors = ['bred', 'blime', 'bblue', 'byellow', 'bpurple', 'bdpink', 'bpeach', 'bturq'];
+                $colors = [ 'blime','bred', 'bblue', 'byellow', 'bpurple', 'bdpink', 'bpeach', 'bturq'];
                 
                 //assign border color to candidate
                 $bcolors = 0;
