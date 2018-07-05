@@ -26,6 +26,9 @@ if ( ! class_exists('Answer_Displayer') ) {
             }
             
             public function render_answers_displayer( $atts ){
+              if ( is_admin() ){
+                return;  //do nothing on admin page
+              }
                 $object = get_site_option(Question_Builder::$question_set_key);
                 $id = $atts["id"];
                 $colors = [ 'blime','bred', 'bblue', 'byellow', 'bpurple', 'bdpink', 'bpeach', 'bturq'];
