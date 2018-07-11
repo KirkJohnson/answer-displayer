@@ -112,7 +112,9 @@ if ( ! class_exists('Answer_Displayer') ) {
                 </div>
             <?php echo $answer; $bcolors++;?> 
         </div>
-              <?php } ?>
+              <?php } 
+              $count++;
+              ?>
          <?php } ?>
     </div>
 </div>
